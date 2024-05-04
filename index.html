@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title></title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="robots" content="noodp"/>
+
+    <link rel="stylesheet" href="https://pantos9000.github.io/style.css">
+    <link rel="stylesheet" href="https://pantos9000.github.io/color/blue.css">
+
+    <link rel="stylesheet" href="https://pantos9000.github.io/font-hack-subset.css">
+
+    <meta name="description" content="">
+
+    <meta property="og:description" content="">
+    <meta property="og:title" content="">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pantos9000.github.io/">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:description" content="">
+    <meta name="twitter:title" content="">
+    <meta property="twitter:domain" content="pantos9000.github.io">
+    <meta property="twitter:url" content="https://pantos9000.github.io/">
+
+    </head>
+
+<body class="">
+<div class="container">
+    
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">
+                    
+                <a href="https://pantos9000.github.io" style="text-decoration: none;">
+                    <div class="logo">
+                      
+                            Pantos&#x27; Periphrases
+                        
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        
+        
+                <nav class="menu">
+            <ul class="menu__inner">
+                <li class="active"><a href="https://pantos9000.github.io">blog</a></li>
+            
+                <li><a href="https://pantos9000.github.io/tags">tags</a></li>
+            
+                <li><a href="https://pantos9000.github.io/archive">archive</a></li>
+            
+                <li><a href="https://pantos9000.github.io/about">about</a></li>
+            
+                <li><a href="https://github.com/pantos9000" target="_blank" rel="noopener noreferrer">github</a></li>
+            </ul>
+        </nav>
+    
+    
+        
+    </header>
+    
+
+    <div class="content">
+        
+        <div class="posts">
+                <div class="post on-list">
+                    
+    <h1 class="post-title"><a href="https://pantos9000.github.io/per-directory-git-config/">Per-directory config of git user settings and ssh authentication</a></h1>
+    <div class="post-meta-inline">
+        
+    <span class="post-date">
+            2024-05-04
+        </span>
+
+    </div>
+
+    
+        <span class="post-tags-inline">
+                :: tags:&nbsp;
+                <a class="post-tag" href="https://pantos9000.github.io/tags/git/">#git</a>&nbsp;
+                <a class="post-tag" href="https://pantos9000.github.io/tags/ssh/">#ssh</a></span>
+    
+
+
+                    <div class="post-content">
+            <h1 id="multiple-ssh-keys">Multiple SSH keys</h1>
+<p>To generate a new key for a new account or service:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">ssh-keygen -t</span><span> ed25519</span><span style="color:#ffb964;"> -C </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">foo@blarb.org</span><span style="color:#556633;">&quot;</span><span style="color:#ffb964;"> -f </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">~/.ssh/foo</span><span style="color:#556633;">&quot;
+</span><span style="color:#ffb964;">ssh-keygen -t</span><span> ed25519</span><span style="color:#ffb964;"> -C </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">bar@blubb.org</span><span style="color:#556633;">&quot;</span><span style="color:#ffb964;"> -f </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">~/.ssh/bar</span><span style="color:#556633;">&quot;
+</span></code></pre>
+<h1 id="different-ssh-keys-for-different-services">Different SSH keys for different services</h1>
+<p>If the keys are used for accounts in different services like <em>github</em> or <em>bitbucket</em>, we can
+have each service use a different ssh config.</p>
+<p>Add to <code>~/.ssh/config</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">Host</span><span> github.com
+</span><span>    </span><span style="color:#ffb964;">Hostname</span><span> github.com
+</span><span>    </span><span style="color:#ffb964;">IdentityFile ~</span><span>/.ssh/foo
+</span><span>    </span><span style="color:#ffb964;">IdentitiesOnly</span><span> yes
+</span><span>
+</span><span style="color:#ffb964;">Host</span><span> bitbucket.org
+</span><span>    </span><span style="color:#ffb964;">Hostname</span><span> bitbucket.org
+</span><span>    </span><span style="color:#ffb964;">IdentityFile ~</span><span>/.ssh/bar
+</span><span>    </span><span style="color:#ffb964;">IdentitiesOnly</span><span> yes
+</span></code></pre>
+<p>Then each service will have a certain SSH key assigned, system-wide. So far so good, but this won't
+work for different accounts on the <strong>same</strong> service.</p>
+<p>This can be tackled in a different way though, but let's first have alook at...</p>
+<h1 id="multiple-git-identities-depending-on-parent-directory">Multiple git identities, depending on parent directory</h1>
+<p>Let's assume we have different git identities (i.e. name/email) for each of the services, and we
+want git to atomatically choose the right one.</p>
+<ul>
+<li>
+<p>Create two parent directories that each contains our repos for the according service, e.g.:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">mkdir ~</span><span>/github
+</span><span style="color:#ffb964;">mkdir ~</span><span>/bitbucket
+</span></code></pre>
+</li>
+<li>
+<p>Add to <code>~/.gitconfig</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">[includeIf </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">gitdir:~/github</span><span style="color:#556633;">&quot;</span><span>]
+</span><span>    </span><span style="color:#ffb964;">path</span><span> = </span><span style="color:#ffb964;">~</span><span>/github/.gitconfig
+</span><span style="color:#ffb964;">[includeIf </span><span style="color:#556633;">&quot;</span><span style="color:#99ad6a;">gitdir:~/bitbucket</span><span style="color:#556633;">&quot;</span><span>]
+</span><span>    </span><span style="color:#ffb964;">path</span><span> = </span><span style="color:#ffb964;">~</span><span>/bitbucket/.gitconfig
+</span></code></pre>
+</li>
+<li>
+<p>Create <code>~/github/.gitconfig</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">[user]
+</span><span>    </span><span style="color:#ffb964;">email</span><span> = foo@blarb.org
+</span><span>    </span><span style="color:#ffb964;">name</span><span> = Foo
+</span></code></pre>
+</li>
+<li>
+<p>Create <code>~/bitbucket/.gitconfig</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">[user]
+</span><span>    </span><span style="color:#ffb964;">email</span><span> = bar@blubb.org
+</span><span>    </span><span style="color:#ffb964;">name</span><span> = Bar
+</span></code></pre>
+</li>
+</ul>
+<p>With this, git will pick the an identity, depending on the parent directory that the git repo is
+in. This will not be system-wide, so if we want to add new identities, we will have to create
+additional parent dirs and add new <code>includeIf</code> entries.</p>
+<h1 id="different-ssh-keys-for-the-same-service-depending-on-parent-directory">Different SSH keys for the same service, depending on parent directory</h1>
+<p>Instead of using the SSH config file, we can use the different git config files in the respective
+parent directories to pick the right SSH key.</p>
+<ul>
+<li>
+<p>Add to <code>~/github/.gitconfig</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">[core]
+</span><span>    </span><span style="color:#ffb964;">sshCommand</span><span> = ssh</span><span style="color:#ffb964;"> -i ~</span><span>/.ssh/foo
+</span></code></pre>
+</li>
+<li>
+<p>Add to <code>~/bitbucket/.gitconfig</code>:</p>
+<pre data-lang="bash" style="background-color:#151515;color:#e8e8d3;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#ffb964;">[core]
+</span><span>    </span><span style="color:#ffb964;">sshCommand</span><span> = ssh</span><span style="color:#ffb964;"> -i ~</span><span>/.ssh/bar
+</span></code></pre>
+</li>
+</ul>
+<p>This can even be used for different git accounts on the same service. Depending on the parent
+directory, a certain author, email and ssh key will be used.</p>
+
+        </div>
+
+                </div>
+            <div class="pagination">
+                <div class="pagination__buttons"></div>
+            </div>
+        </div>
+        
+    </div>
+
+    
+    <footer class="footer">
+        <div class="footer__inner">
+                <div class="copyright">
+                        <span>© 
+    2024
+ Pantos</span>
+                    <span class="copyright-theme">
+                        <span class="copyright-theme-sep">:: </span>
+                        Theme: <a href="https://github.com/pawroman/zola-theme-terminimal/">Terminimal</a> by pawroman
+                    </span>
+                </div>
+            </div>
+    </footer>
+    
+
+</div>
+</body>
+
+</html>
